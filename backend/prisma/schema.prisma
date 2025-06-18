@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String @unique
+  password    String
+  address     String
+  phoneNumber String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products         Product[]
+  purchasedItems   Transaction[] @relation("Buyer")
+  soldItems        Transaction[] @relation("Seller")
+
+  @@map("users")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  categories    String[] // Array of category strings
+  price         Float
+  rentPrice     Float
+  rentType      RentType
+  purchasePrice Float
+  views         Int      @default(0)
+  isAvailable   Boolean  @default(true)
+  datePosted    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId      String
+  transactions Transaction[]
+
+  @@map("products")
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  type          TransactionType
+  price         Float
+  rentStartDate DateTime?
+  rentEndDate   DateTime?
+  status        TransactionStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  buyer     User    @relation("Buyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId   String
+  seller    User    @relation("Seller", fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId  String
+
+  @@map("transactions")
+}
+
+enum RentType {
+  PER_HOUR
+  PER_DAY
+}
+
+enum TransactionType {
+  PURCHASE
+  RENT
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
