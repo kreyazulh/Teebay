@@ -9,7 +9,7 @@ import { generateToken, hashPassword, comparePassword, validateEmail, validatePa
 const PORT = process.env.PORT || 4000;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
 
-// Minimal GraphQL schema for testing
+// GraphQL schema
 const typeDefs = `
   type User {
     id: ID!
@@ -123,7 +123,7 @@ const typeDefs = `
   }
 `;
 
-// Minimal resolvers for testing
+// Resolvers
 const resolvers = {
   hello: () => 'Hello from GraphQL!',
   
@@ -175,7 +175,12 @@ const resolvers = {
       where: { ownerId: context.user.userId },
       include: {
         owner: true,
-        transactions: true
+        transactions: {
+          include: {
+            buyer: true,
+            seller: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -386,7 +391,7 @@ const resolvers = {
       throw new Error('Start date cannot be in the past');
     }
     
-    // Check for rent overlap (simplified check)
+    // Check for rent overlap
     const overlappingRents = await prisma.transaction.findMany({
       where: {
         productId,
@@ -555,9 +560,9 @@ async function startServer() {
 
     // Start the HTTP server
     app.listen(PORT, () => {
-      console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
-      console.log(`📊 Health check at http://localhost:${PORT}/health`);
-      console.log(`🧪 Test endpoint at http://localhost:${PORT}/test`);
+      console.log(`Server ready at http://localhost:${PORT}/graphql`);
+      console.log(`Health check at http://localhost:${PORT}/health`);
+      console.log(`Test endpoint at http://localhost:${PORT}/test`);
     });
 
   } catch (error) {
@@ -566,7 +571,7 @@ async function startServer() {
   }
 }
 
-// Handle graceful shutdown
+// Shutdown
 process.on('SIGINT', async () => {
   console.log('Shutting down gracefully...');
   await prisma.$disconnect();
